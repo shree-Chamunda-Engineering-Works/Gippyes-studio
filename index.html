@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GippyeS Studio | Pipe Cleaner Art</title>
+    <title>GippyeS Studio | Premium Art</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=Playfair+Display:ital,wght@0,900;1,900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700;1,900&display=swap" rel="stylesheet">
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBaCTU_JPXQjLP2N0zP1YYa2bRZiVh1FPY",
@@ -28,18 +29,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         window.db = db;
-        window.fb = { ref, onValue, push, remove };
+        window.fb = { ref, onValue, push, remove, update };
     </script>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8f6f6; scroll-behavior: smooth; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #ffffff; color: #1d1d1f; overflow-x: hidden; }
         .font-display { font-family: 'Playfair Display', serif; }
-        .bg-primary { background-color: #fb7185; }
-        .text-primary { color: #fb7185; }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .product-card:hover img { transform: scale(1.1); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: saturate(180%) blur(20px); }
+        .apple-card { border-radius: 24px; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .review-fade { mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent); }
     </style>
 </head>
 <body>
@@ -47,243 +46,204 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
+        const { motion, AnimatePresence } = window.Motion;
 
         function App() {
             const [page, setPage] = useState('home');
             const [products, setProducts] = useState([]);
             const [cart, setCart] = useState([]);
+            const [selectedProduct, setSelectedProduct] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
             const [pass, setPass] = useState("");
-            
-            const [custName, setCustName] = useState("");
-            const [custAdd, setCustAdd] = useState("");
-            const [custNum, setCustNum] = useState("");
 
             useEffect(() => {
-                const checkFirebase = setInterval(() => {
+                const checkFB = setInterval(() => {
                     if (window.db && window.fb) {
-                        const productsRef = window.fb.ref(window.db, 'products');
-                        window.fb.onValue(productsRef, (snapshot) => {
-                            const data = snapshot.val();
-                            if (data) {
-                                const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-                                setProducts(list);
-                            } else { setProducts([]); }
+                        window.fb.onValue(window.fb.ref(window.db, 'products'), (snap) => {
+                            const data = snap.val();
+                            setProducts(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : []);
                         });
-                        clearInterval(checkFirebase);
+                        clearInterval(checkFB);
                     }
                 }, 500);
-                return () => clearInterval(checkFirebase);
             }, []);
 
-            useEffect(() => { lucide.createIcons(); }, [page, products, cart]);
+            useEffect(() => { lucide.createIcons(); }, [page, products, cart, selectedProduct, isAdmin]);
 
-            const addNewProduct = (e) => {
-                e.preventDefault();
-                const newP = {
-                    name: e.target.name.value,
-                    price: Number(e.target.price.value),
-                    image: e.target.image.value
-                };
-                window.fb.push(window.fb.ref(window.db, 'products'), newP);
-                e.target.reset();
-                alert("Product Added Successfully!");
-            };
-
-            const deleteProduct = (id) => {
-                if(confirm("Delete this product globally?")) {
-                    window.fb.remove(window.fb.ref(window.db, `products/${id}`));
-                }
-            };
-
-            const clearCart = () => {
-                if(confirm("Empty your cart?")) {
-                    setCart([]);
-                }
-            };
-
-            const total = cart.reduce((s, i) => s + i.price, 0);
-
-            const handlePayment = () => {
-                if (cart.length === 0) return;
-                if (!custName || !custAdd || !custNum) {
-                    alert("Please fill in your Name, Address and Number first!");
-                    return;
-                }
-
-                const productList = cart.map(item => `• ${item.name}: Rs. ${item.price}`).join('\n');
-                const msg = `🛍️ *New Order from GippyeS Studio*\n\n*Customer Details:*\nName: ${custName}\nAdd: ${custAdd}\nNum: ${custNum}\n\n*Products:*\n${productList}\n\n*Total Price:* Rs. ${total}\n\n📌 *Note:* After sending this message, please also send the Screenshot (SS) of your payment for confirmation.`;
-
-                const upiId = "mahirabha0@okhdfcbank";
-                const upiUrl = `upi://pay?pa=${upiId}&pn=GippyeS%20Studio&am=${total}&cu=INR`;
-                
-                window.location.href = upiUrl;
-
-                setTimeout(() => {
-                    // UPDATED WHATSAPP NUMBER HERE
-                    window.open(`https://wa.me/919601650687?text=${encodeURIComponent(msg)}`, '_blank');
-                    setCart([]);
-                    setPage('home');
-                }, 2000);
+            const getImgs = (p) => {
+                if (Array.isArray(p.images)) return p.images;
+                if (typeof p.images === 'string') return p.images.split(',').map(s => s.trim());
+                return [p.image || "https://via.placeholder.com/600"];
             };
 
             return (
-                <div className="min-h-screen flex flex-col">
-                    {/* NAVBAR */}
-                    <nav className="bg-white/80 backdrop-blur-md border-b border-pink-100 p-4 sticky top-0 z-50">
-                        <div className="max-w-6xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setPage('home')}>
-                                <img src="logo.jpg" className="w-12 h-12 rounded-full border-2 border-pink-100 object-cover" onError={(e) => e.target.src="https://api.dicebear.com/7.x/initials/svg?seed=GS&backgroundColor=fb7185"} />
-                                <div>
-                                    <h1 className="text-xl font-black leading-none text-slate-900">GippyeS</h1>
-                                    <span className="text-[10px] text-primary font-bold uppercase tracking-widest">Studio</span>
-                                </div>
-                            </div>
-                            <button onClick={() => setPage('cart')} className="relative p-2 text-slate-600">
-                                <i data-lucide="shopping-bag"></i>
-                                {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold border-2 border-white">{cart.length}</span>}
-                            </button>
-                        </div>
+                <div className="min-h-screen">
+                    <nav className="glass-nav border-b border-gray-50 p-4 sticky top-0 z-[100] flex justify-between items-center px-6 md:px-20">
+                        <h1 onClick={() => setPage('home')} className="text-xl font-bold tracking-tighter cursor-pointer">GippyeS <span className="text-rose-500 text-[10px] uppercase tracking-widest">Studio</span></h1>
+                        <button onClick={() => setPage('cart')} className="relative p-2">
+                            <i data-lucide="shopping-bag" className="w-5 h-5 text-zinc-800"></i>
+                            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-zinc-900 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
+                        </button>
                     </nav>
 
-                    {/* HOME PAGE */}
-                    <div className={`page ${page === 'home' ? 'active' : ''}`}>
-                        <section className="bg-gradient-to-br from-pink-50 to-pink-100 py-20 px-6 rounded-b-[60px] mb-16">
-                            <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-                                <div className="space-y-8 text-center md:text-left">
-                                    <span className="bg-white px-4 py-1 rounded-full text-primary text-xs font-bold uppercase tracking-widest shadow-sm">Handmade with Love</span>
-                                    <h2 className="font-display text-6xl md:text-8xl font-black tracking-tight leading-none text-slate-900">Handmade <br/><span className="text-primary italic text-6xl">Pipe Cleaner Dreams</span></h2>
-                                    <p className="text-slate-500 text-lg font-medium max-w-md mx-auto md:mx-0">Specializing in trendy handmade work, from personalized bouquets to character charms.</p>
-                                    <button onClick={() => document.getElementById('shop').scrollIntoView()} className="bg-primary text-white px-10 py-5 rounded-[24px] font-bold shadow-xl">Explore Collection</button>
-                                </div>
-                                <div className="hidden md:grid grid-cols-2 gap-4">
-                                    <div className="bg-white p-2 rounded-[40px] shadow-2xl rotate-[-2deg]">
-                                        <img src="https://picsum.photos/seed/pipe1/400/600" className="rounded-[35px]" />
-                                    </div>
-                                    <div className="bg-white p-2 rounded-[40px] shadow-2xl translate-y-12 rotate-[2deg]">
-                                        <img src="https://picsum.photos/seed/pipe2/400/600" className="rounded-[35px]" />
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                    <main>
+                        {page === 'home' && (
+                            <div>
+                                {/* HERO */}
+                                <section className="h-[80vh] flex flex-col items-center justify-center text-center px-6">
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
+                                        <p className="text-[10px] font-bold tracking-[0.4em] text-rose-400 uppercase mb-4">Handmade Dreams</p>
+                                        <h2 className="text-6xl md:text-8xl font-bold tracking-tighter leading-none mb-6 text-zinc-900">
+                                            Handmade <br/> <span className="italic font-display text-rose-500">Pipe Cleaner</span> <br/> Dreams
+                                        </h2>
+                                        <button onClick={() => document.getElementById('shop').scrollIntoView({behavior:'smooth'})} className="bg-zinc-900 text-white px-10 py-4 rounded-full font-bold text-sm shadow-xl">Explore Collection</button>
+                                    </motion.div>
+                                </section>
 
-                        <section id="shop" className="max-w-6xl mx-auto p-6 py-10">
-                            <h3 className="font-display text-4xl font-black mb-12 text-slate-900">Shop the Collection</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
-                                {products.map(p => (
-                                    <div key={p.id} className="product-card group cursor-pointer" onClick={() => {setCart([...cart, p]); alert("Added to cart!")}}>
-                                        <div className="aspect-[4/5] rounded-[48px] overflow-hidden bg-white border border-slate-100 mb-6 relative shadow-sm">
-                                            <img src={p.image} className="w-full h-full object-cover transition-transform duration-700" />
-                                            <div className="absolute bottom-6 right-6 bg-white w-12 h-12 rounded-full flex items-center justify-center shadow-xl text-primary font-bold">+</div>
-                                        </div>
-                                        <h3 className="font-bold text-xl">{p.name}</h3>
-                                        <p className="text-primary font-black text-lg">Rs. {p.price}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    </div>
+                                {/* FEEDBACK SCROLL */}
+                                <div className="py-8 border-y border-gray-50 overflow-hidden review-fade">
+                                    <motion.div animate={{ x: [0, -1000] }} transition={{ repeat: Infinity, duration: 25, ease: "linear" }} className="flex gap-20 whitespace-nowrap text-gray-300 font-medium italic text-lg">
+                                        {["Amazing quality! ✨", "The cutests flowers ever 🌸", "Fast shipping to Surat 🚚", "Beautifully handmade ❤️"].map((t, i) => (
+                                            <span key={i}>"{t}"</span>
+                                        ))}
+                                        {["Amazing quality! ✨", "The cutests flowers ever 🌸", "Fast shipping to Surat 🚚", "Beautifully handmade ❤️"].map((t, i) => (
+                                            <span key={i+4}>"{t}"</span>
+                                        ))}
+                                    </motion.div>
+                                </div>
 
-                    {/* CART PAGE */}
-                    <div className={`page ${page === 'cart' ? 'active' : ''}`}>
-                        <div className="max-w-2xl mx-auto p-6 py-20 space-y-10">
-                            <div className="flex justify-between items-end">
-                                <h2 className="text-5xl font-black text-slate-900 italic">Your Cart</h2>
-                                {cart.length > 0 && (
-                                    <button onClick={clearCart} className="text-rose-400 font-bold text-sm uppercase tracking-widest hover:text-rose-600">
-                                        Clear All
-                                    </button>
+                                {/* GRID */}
+                                <section id="shop" className="max-w-7xl mx-auto px-6 py-20">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
+                                        {products.map(p => (
+                                            <div key={p.id} onClick={() => setSelectedProduct(p)} className="apple-card group cursor-pointer">
+                                                <div className="aspect-[4/5] rounded-[30px] overflow-hidden bg-gray-50 mb-4 relative">
+                                                    <img src={getImgs(p)[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                                                    {p.status === 'oos' && <div className="absolute inset-0 bg-white/60 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest">Sold Out</div>}
+                                                    {p.status === 'soon' && <div className="absolute inset-0 bg-rose-500/10 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-rose-600">Coming Soon</div>}
+                                                </div>
+                                                <h3 className="font-bold text-sm text-zinc-800 px-2">{p.name}</h3>
+                                                <p className="text-rose-500 font-black text-sm px-2">Rs. {p.price}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+
+                        {page === 'cart' && (
+                            <div className="max-w-xl mx-auto px-6 py-20">
+                                <h2 className="text-4xl font-bold mb-10 tracking-tight">Your Bag.</h2>
+                                {cart.length === 0 ? <p className="text-gray-400 font-medium">Empty bag.</p> : (
+                                    <div className="space-y-6">
+                                        {cart.map((item, i) => (
+                                            <div key={i} className="flex justify-between items-center p-6 bg-gray-50 rounded-[24px]">
+                                                <span className="font-bold">{item.name}</span>
+                                                <span className="font-black text-rose-500">Rs. {item.price}</span>
+                                            </div>
+                                        ))}
+                                        <button className="w-full bg-zinc-900 text-white py-5 rounded-full font-bold">Order on WhatsApp</button>
+                                    </div>
                                 )}
                             </div>
-                            
-                            {cart.length === 0 ? (
-                                <div className="py-20 text-center text-slate-400 font-medium bg-white rounded-[40px] border border-dashed">Your cart is empty...</div>
-                            ) : (
-                                <div className="space-y-8">
-                                    <div className="bg-white p-6 rounded-[40px] shadow-sm border border-pink-50">
-                                        {cart.map((item, i) => (
-                                            <div key={i} className="flex justify-between items-center border-b border-pink-50 py-4 last:border-0">
-                                                <div className="flex gap-4 items-center">
-                                                    <img src={item.image} className="w-16 h-16 rounded-2xl object-cover" />
-                                                    <span className="font-bold text-slate-900">{item.name}</span>
+                        )}
+
+                        {page === 'admin' && (
+                            <div className="max-w-4xl mx-auto px-6 py-20">
+                                {!isAdmin ? (
+                                    <div className="text-center">
+                                        <input type="password" placeholder="Pass" className="border p-4 rounded-xl mb-4" onChange={e=>setPass(e.target.value)} />
+                                        <button onClick={() => pass === 'gippyes123' && setIsAdmin(true)} className="block mx-auto bg-black text-white px-8 py-2 rounded-xl">Login</button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-10">
+                                        <div className="bg-gray-50 p-8 rounded-[32px]">
+                                            <h3 className="font-bold mb-6 text-xl">Add New Product</h3>
+                                            <form className="grid gap-4" onSubmit={(e) => {
+                                                e.preventDefault();
+                                                const newP = {
+                                                    name: e.target.n.value,
+                                                    price: Number(e.target.p.value),
+                                                    images: e.target.i.value, // Multi URLs
+                                                    desc: e.target.d.value,
+                                                    status: e.target.s.value
+                                                };
+                                                window.fb.push(window.fb.ref(window.db, 'products'), newP);
+                                                e.target.reset();
+                                            }}>
+                                                <input name="n" placeholder="Name" className="p-4 rounded-xl border-none" required />
+                                                <input name="p" type="number" placeholder="Price" className="p-4 rounded-xl border-none" required />
+                                                <textarea name="i" placeholder="Images (URL 1, URL 2, URL 3)" className="p-4 rounded-xl border-none" required />
+                                                <textarea name="d" placeholder="Description" className="p-4 rounded-xl border-none" />
+                                                <select name="s" className="p-4 rounded-xl border-none">
+                                                    <option value="available">Available</option>
+                                                    <option value="oos">Out of Stock</option>
+                                                    <option value="soon">Coming Soon</option>
+                                                </select>
+                                                <button className="bg-rose-500 text-white py-4 rounded-xl font-bold">Add Product</button>
+                                            </form>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            {products.map(p => (
+                                                <div key={p.id} className="flex justify-between items-center p-4 bg-white border rounded-xl">
+                                                    <span className="text-sm font-bold">{p.name} ({p.status})</span>
+                                                    <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="text-red-500 text-xs">Delete</button>
                                                 </div>
-                                                <span className="font-black text-primary">Rs. {item.price}</span>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
 
-                                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-pink-100 space-y-4">
-                                        <h3 className="font-bold text-lg text-slate-800 mb-2">Delivery Details</h3>
-                                        <input placeholder="Your Full Name" className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 ring-pink-200" value={custName} onChange={(e)=>setCustName(e.target.value)} />
-                                        <input placeholder="Full Address (with Pincode)" className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 ring-pink-200" value={custAdd} onChange={(e)=>setCustAdd(e.target.value)} />
-                                        <input placeholder="WhatsApp Number" type="tel" className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 ring-pink-200" value={custNum} onChange={(e)=>setCustNum(e.target.value)} />
-                                    </div>
-
-                                    <div className="text-4xl font-black flex justify-between pt-6">
-                                        <span>Total</span>
-                                        <span className="text-primary">Rs. {total}</span>
-                                    </div>
-                                    <button onClick={handlePayment} className="w-full bg-primary text-white py-6 rounded-[32px] font-bold shadow-2xl text-xl flex items-center justify-center gap-3">
-                                        <i data-lucide="zap"></i>
-                                        PAY Rs. {total} & ORDER
+                    {/* PRODUCT DETAIL MODAL */}
+                    <AnimatePresence>
+                        {selectedProduct && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-white overflow-y-auto">
+                                <div className="max-w-6xl mx-auto px-6 py-12 md:py-20">
+                                    <button onClick={() => setSelectedProduct(null)} className="mb-10 font-bold text-gray-400 hover:text-black transition-colors flex items-center gap-2">
+                                        <i data-lucide="arrow-left" className="w-4 h-4"></i> Back
                                     </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                                    
+                                    <div className="grid md:grid-cols-2 gap-12">
+                                        {/* Multi-Image Gallery */}
+                                        <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
+                                            {getImgs(selectedProduct).map((img, i) => (
+                                                <img key={i} src={img} className="w-full aspect-square object-cover rounded-[32px] snap-center flex-shrink-0 bg-gray-50 border border-gray-100" />
+                                            ))}
+                                        </div>
 
-                    {/* ADMIN PAGE */}
-                    <div className={`page ${page === 'admin' ? 'active' : ''}`}>
-                        <div className="max-w-4xl mx-auto p-6 py-20">
-                            {!isAdmin ? (
-                                <div className="text-center space-y-6 bg-white p-12 rounded-[40px] border shadow-sm">
-                                    <h2 className="text-3xl font-black italic">Admin Login</h2>
-                                    <input type="password" onChange={(e)=>setPass(e.target.value)} className="w-full p-4 border rounded-2xl max-w-xs text-center" placeholder="Password" />
-                                    <br/><button onClick={() => pass === "gippyes123" ? setIsAdmin(true) : alert("Wrong Password")} className="bg-primary text-white px-10 py-3 rounded-xl font-bold">Login</button>
-                                </div>
-                            ) : (
-                                <div className="space-y-12">
-                                    <div className="flex justify-between items-center">
-                                        <h2 className="text-4xl font-black italic text-slate-900">Live Management</h2>
-                                        <button onClick={() => setIsAdmin(false)} className="text-primary font-bold">Logout</button>
-                                    </div>
-                                    <form onSubmit={addNewProduct} className="bg-white p-8 rounded-[40px] border border-pink-100 space-y-4 shadow-sm">
-                                        <input name="name" placeholder="Product Name" className="w-full p-4 bg-slate-50 rounded-2xl border-none" required />
-                                        <input name="price" type="number" placeholder="Price (Rs.)" className="w-full p-4 bg-slate-50 rounded-2xl border-none" required />
-                                        <input name="image" placeholder="Image URL" className="w-full p-4 bg-slate-50 rounded-2xl border-none" required />
-                                        <button className="w-full bg-primary text-white py-4 rounded-2xl font-bold">Update Shop Globally</button>
-                                    </form>
-                                    <div className="grid gap-4">
-                                        {products.map(p => (
-                                            <div key={p.id} className="flex justify-between items-center p-4 bg-white rounded-3xl border shadow-sm">
-                                                <div className="flex items-center gap-4">
-                                                    <img src={p.image} className="w-12 h-12 rounded-xl object-cover" />
-                                                    <span className="font-bold">{p.name} - Rs. {p.price}</span>
-                                                </div>
-                                                <button onClick={() => deleteProduct(p.id)} className="text-rose-500 font-bold p-2">Delete</button>
+                                        <div className="flex flex-col justify-center">
+                                            <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4 text-zinc-900">{selectedProduct.name}</h2>
+                                            <p className="text-2xl font-black text-rose-500 italic mb-8 font-display">Rs. {selectedProduct.price}</p>
+                                            <p className="text-gray-500 leading-relaxed mb-10 text-lg">
+                                                {selectedProduct.desc || "Every GippyeS creation is handcrafted with premium pipe cleaners. No two pieces are exactly alike, making your gift truly one-of-a-kind."}
+                                            </p>
+                                            
+                                            {/* MINIMAL ADD TO CART BUTTON */}
+                                            <div className="flex gap-4">
+                                                <button 
+                                                    disabled={selectedProduct.status !== 'available'}
+                                                    onClick={() => {setCart([...cart, selectedProduct]); setSelectedProduct(null);}}
+                                                    className={`px-12 py-4 rounded-full font-bold text-sm transition-all shadow-lg ${
+                                                        selectedProduct.status === 'available' 
+                                                        ? 'bg-zinc-900 text-white hover:brightness-110' 
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                                                    }`}
+                                                >
+                                                    {selectedProduct.status === 'oos' ? 'Sold Out' : selectedProduct.status === 'soon' ? 'Coming Soon' : 'Add to Bag'}
+                                                </button>
                                             </div>
-                                        ))}
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                    {/* FOOTER */}
-                    <footer className="bg-white border-t border-pink-50 p-16 mt-auto">
-                        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
-                            <div className="flex items-center gap-4">
-                                <img src="logo.jpg" className="w-14 h-14 rounded-full" onError={(e) => e.target.style.display='none'} />
-                                <div>
-                                    <p className="font-black text-2xl text-slate-900">GippyeS Studio</p>
-                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Pipe Cleaner Art & Gifts</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-10">
-                                <a href="https://www.instagram.com/_gippyes_studio_/" target="_blank" className="text-primary font-bold">Instagram</a>
-                                <button onClick={() => setPage('admin')} className="text-slate-300 font-bold text-xs uppercase tracking-widest">Admin</button>
-                            </div>
-                        </div>
+                    <footer className="py-20 text-center opacity-20">
+                        <p onClick={() => setPage('admin')} className="text-[10px] font-bold tracking-[0.4em] uppercase cursor-pointer">Admin Dashboard</p>
                     </footer>
                 </div>
             );

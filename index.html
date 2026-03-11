@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GippyeS Studio | Admin & Shop</title>
+    <title>GippyeS Studio | Premium Admin & Shop</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -35,8 +35,8 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #ffffff; color: #1d1d1f; }
         .font-display { font-family: 'Playfair Display', serif; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
         .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: saturate(180%) blur(20px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
         .apple-card { border-radius: 28px; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
         .review-fade { mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent); }
     </style>
@@ -77,43 +77,64 @@
                 return [p.image || "https://via.placeholder.com/600"];
             };
 
-            const toggleStatus = (id, newStatus) => {
-                window.fb.update(window.fb.ref(window.db, `products/${id}`), { status: newStatus });
+            const handleAddToCart = (item) => {
+                setCart(prev => [...prev, { ...item, cartId: Date.now() }]);
+                setSelectedProduct(null);
             };
 
             return (
                 <div className="min-h-screen">
+                    {/* APPLE NAVIGATION */}
                     <nav className="glass-nav border-b border-gray-50 p-4 sticky top-0 z-[100] flex justify-between items-center px-6 md:px-20">
                         <h1 onClick={() => setPage('home')} className="text-xl font-bold tracking-tighter cursor-pointer">GippyeS <span className="text-rose-500 text-[10px] uppercase tracking-widest">Studio</span></h1>
-                        <button onClick={() => setPage('cart')} className="relative p-2">
-                            <i data-lucide="shopping-bag" className="w-5 h-5 text-zinc-800"></i>
-                            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-zinc-900 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
+                        <button onClick={() => setPage('cart')} className="relative p-2 hover:bg-gray-50 rounded-full transition-all">
+                            <i data-lucide="shopping-bag" className="w-5 h-5"></i>
+                            {cart.length > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-zinc-900 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                    {cart.length}
+                                </span>
+                            )}
                         </button>
                     </nav>
 
                     <main>
                         {page === 'home' && (
                             <div>
-                                {/* HERO */}
-                                <section className="h-[80vh] flex flex-col items-center justify-center text-center px-6">
+                                {/* AUTHENTIC HERO */}
+                                <section className="h-[75vh] flex flex-col items-center justify-center text-center px-6">
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                        <p className="text-[10px] font-bold tracking-[0.4em] text-rose-400 uppercase mb-4">Handmade Dreams</p>
-                                        <h2 className="text-6xl md:text-8xl font-bold tracking-tighter mb-6">Handmade <br/> <span className="italic font-display text-rose-500">Pipe Cleaner</span> <br/> Dreams</h2>
-                                        <button onClick={() => document.getElementById('shop').scrollIntoView({behavior:'smooth'})} className="bg-zinc-900 text-white px-10 py-4 rounded-full font-bold text-sm">Explore Collection</button>
+                                        <p className="text-[10px] font-bold tracking-[0.4em] text-rose-400 uppercase mb-4">Handmade with Love</p>
+                                        <h2 className="text-6xl md:text-8xl font-bold tracking-tighter mb-6 leading-[0.9]">
+                                            Handmade <br/> <span className="italic font-display text-rose-500">Pipe Cleaner</span> <br/> Dreams
+                                        </h2>
+                                        <button onClick={() => document.getElementById('shop').scrollIntoView({behavior:'smooth'})} className="bg-zinc-900 text-white px-10 py-4 rounded-full font-bold text-sm shadow-xl hover:scale-105 transition-transform">Explore Collection</button>
                                     </motion.div>
                                 </section>
 
-                                {/* GRID */}
+                                {/* FEEDBACK BAR */}
+                                <div className="py-10 border-y border-gray-50 overflow-hidden review-fade bg-white">
+                                    <motion.div animate={{ x: [0, -1000] }} transition={{ repeat: Infinity, duration: 25, ease: "linear" }} className="flex gap-20 whitespace-nowrap text-gray-300 font-medium italic text-xl">
+                                        {["Aesthetic & Cute! ✨", "Best quality handmade flowers 🌸", "Perfect gift for friends ❤️", "Fast delivery! 🚚"].map((t, i) => (
+                                            <span key={i}>"{t}"</span>
+                                        ))}
+                                        {["Aesthetic & Cute! ✨", "Best quality handmade flowers 🌸", "Perfect gift for friends ❤️", "Fast delivery! 🚚"].map((t, i) => (
+                                            <span key={i+10}>"{t}"</span>
+                                        ))}
+                                    </motion.div>
+                                </div>
+
+                                {/* PRODUCT GRID */}
                                 <section id="shop" className="max-w-7xl mx-auto px-6 py-20">
+                                    <h3 className="text-3xl font-bold tracking-tight mb-12 px-2">Shop the Collection</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
                                         {products.map(p => (
                                             <div key={p.id} onClick={() => setSelectedProduct(p)} className="apple-card group cursor-pointer">
-                                                <div className="aspect-[4/5] rounded-[30px] overflow-hidden bg-gray-50 mb-4 relative">
+                                                <div className="aspect-[4/5] rounded-[30px] overflow-hidden bg-gray-50 mb-4 relative border border-gray-100">
                                                     <img src={getImgs(p)[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
-                                                    {p.status === 'oos' && <div className="absolute inset-0 bg-white/60 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest">Sold Out</div>}
-                                                    {p.status === 'soon' && <div className="absolute inset-0 bg-rose-500/10 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-rose-600">Coming Soon</div>}
+                                                    {p.status === 'oos' && <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-zinc-800">Sold Out</div>}
+                                                    {p.status === 'soon' && <div className="absolute inset-0 bg-rose-500/10 backdrop-blur-sm flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-rose-600">Coming Soon</div>}
                                                 </div>
-                                                <h3 className="font-bold text-sm text-zinc-800 px-2">{p.name}</h3>
+                                                <h4 className="font-bold text-sm text-zinc-800 px-2">{p.name}</h4>
                                                 <p className="text-rose-500 font-black text-sm px-2">Rs. {p.price}</p>
                                             </div>
                                         ))}
@@ -124,16 +145,25 @@
 
                         {page === 'cart' && (
                             <div className="max-w-xl mx-auto px-6 py-20 text-center">
-                                <h2 className="text-4xl font-bold mb-10 tracking-tight">Your Bag.</h2>
-                                {cart.length === 0 ? <p className="text-gray-400 font-medium">Bag is empty</p> : (
+                                <h2 className="text-5xl font-bold mb-12 tracking-tighter">Your Bag.</h2>
+                                {cart.length === 0 ? <p className="text-gray-400 font-bold py-10">Your bag is currently empty.</p> : (
                                     <div className="space-y-4">
                                         {cart.map((item, i) => (
-                                            <div key={i} className="flex justify-between items-center p-6 bg-gray-50 rounded-[24px]">
-                                                <span className="font-bold">{item.name}</span>
-                                                <span className="font-black">Rs. {item.price}</span>
+                                            <div key={i} className="flex justify-between items-center p-6 bg-white border border-gray-100 rounded-[28px] shadow-sm">
+                                                <div className="flex items-center gap-4">
+                                                    <img src={getImgs(item)[0]} className="w-12 h-12 rounded-xl object-cover" />
+                                                    <span className="font-bold text-sm">{item.name}</span>
+                                                </div>
+                                                <span className="font-black text-rose-500">Rs. {item.price}</span>
                                             </div>
                                         ))}
-                                        <button className="w-full bg-zinc-900 text-white py-5 rounded-full font-bold mt-6">Order via WhatsApp</button>
+                                        <div className="pt-10 border-t border-gray-50 mt-10">
+                                            <div className="flex justify-between mb-8 px-2">
+                                                <span className="font-bold text-gray-400">Total</span>
+                                                <span className="text-3xl font-black">Rs. {cart.reduce((s,i) => s + i.price, 0)}</span>
+                                            </div>
+                                            <button className="w-full bg-zinc-900 text-white py-6 rounded-full font-bold text-lg shadow-xl active:scale-95 transition-all">Checkout via WhatsApp</button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -142,41 +172,41 @@
                         {page === 'admin' && (
                             <div className="max-w-4xl mx-auto px-6 py-20">
                                 {!isAdmin ? (
-                                    <div className="text-center">
-                                        <input type="password" placeholder="Password" className="border p-4 rounded-xl mb-4" onChange={e=>setPass(e.target.value)} />
-                                        <button onClick={() => pass === 'gippyes123' && setIsAdmin(true)} className="block mx-auto bg-black text-white px-10 py-3 rounded-xl font-bold">Enter</button>
+                                    <div className="text-center bg-gray-50 p-12 rounded-[40px]">
+                                        <input type="password" placeholder="Pass" className="border-none bg-white p-5 rounded-2xl mb-4 w-full max-w-xs shadow-inner" onChange={e=>setPass(e.target.value)} />
+                                        <button onClick={() => pass === 'gippyes123' && setIsAdmin(true)} className="block mx-auto bg-black text-white px-12 py-4 rounded-full font-bold">Access Dashboard</button>
                                     </div>
                                 ) : (
                                     <div className="space-y-12">
-                                        <div className="bg-gray-50 p-8 rounded-[32px] border">
-                                            <h3 className="font-bold mb-6 text-xl">Manage Existing Products</h3>
-                                            <div className="grid gap-3">
+                                        <div className="bg-gray-50 p-10 rounded-[40px]">
+                                            <h3 className="font-bold mb-8 text-2xl tracking-tight">Live Inventory Manager</h3>
+                                            <div className="grid gap-4">
                                                 {products.map(p => (
-                                                    <div key={p.id} className="flex flex-wrap justify-between items-center p-4 bg-white border rounded-2xl">
-                                                        <div className="flex items-center gap-3">
-                                                            <img src={getImgs(p)[0]} className="w-10 h-10 rounded-lg object-cover" />
+                                                    <div key={p.id} className="flex flex-wrap justify-between items-center p-5 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                                                        <div className="flex items-center gap-4">
+                                                            <img src={getImgs(p)[0]} className="w-12 h-12 rounded-2xl object-cover" />
                                                             <span className="font-bold text-sm">{p.name}</span>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-3">
                                                             <select 
                                                                 value={p.status || 'available'} 
-                                                                onChange={(e) => toggleStatus(p.id, e.target.value)}
-                                                                className="text-xs bg-gray-100 border-none rounded-lg p-2 font-bold"
+                                                                onChange={(e) => window.fb.update(window.fb.ref(window.db, `products/${p.id}`), { status: e.target.value })}
+                                                                className="text-xs bg-zinc-100 border-none rounded-xl p-3 font-bold"
                                                             >
                                                                 <option value="available">Available</option>
                                                                 <option value="oos">Out of Stock</option>
                                                                 <option value="soon">Coming Soon</option>
                                                             </select>
-                                                            <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="p-2 text-red-400 hover:text-red-600"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                                            <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="p-3 text-red-400 hover:text-red-600 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                         
-                                        <div className="bg-gray-50 p-8 rounded-[32px] border">
-                                            <h3 className="font-bold mb-6 text-xl">Add New Product</h3>
-                                            <form className="grid gap-4" onSubmit={(e) => {
+                                        <div className="bg-white p-10 rounded-[40px] border border-gray-100">
+                                            <h3 className="font-bold mb-8 text-2xl tracking-tight">Post New Product</h3>
+                                            <form className="grid gap-5" onSubmit={(e) => {
                                                 e.preventDefault();
                                                 const newP = {
                                                     name: e.target.n.value,
@@ -188,16 +218,16 @@
                                                 window.fb.push(window.fb.ref(window.db, 'products'), newP);
                                                 e.target.reset();
                                             }}>
-                                                <input name="n" placeholder="Name" className="p-4 rounded-xl border border-gray-200" required />
-                                                <input name="p" type="number" placeholder="Price" className="p-4 rounded-xl border border-gray-200" required />
-                                                <textarea name="i" placeholder="Image URLs (comma separated)" className="p-4 rounded-xl border border-gray-200" required />
-                                                <textarea name="d" placeholder="Description" className="p-4 rounded-xl border border-gray-200" />
-                                                <select name="s" className="p-4 rounded-xl border border-gray-200">
-                                                    <option value="available">Available</option>
-                                                    <option value="oos">Out of Stock</option>
-                                                    <option value="soon">Coming Soon</option>
+                                                <input name="n" placeholder="Product Name" className="p-5 rounded-2xl bg-gray-50 border-none" required />
+                                                <input name="p" type="number" placeholder="Price (Rs.)" className="p-5 rounded-2xl bg-gray-50 border-none" required />
+                                                <textarea name="i" placeholder="Image URLs (Separated by commas)" className="p-5 rounded-2xl bg-gray-50 border-none" required />
+                                                <textarea name="d" placeholder="Description of details..." className="p-5 rounded-2xl bg-gray-50 border-none h-32" />
+                                                <select name="s" className="p-5 rounded-2xl bg-gray-50 border-none font-bold">
+                                                    <option value="available">Set as Available</option>
+                                                    <option value="oos">Set as Out of Stock</option>
+                                                    <option value="soon">Set as Coming Soon</option>
                                                 </select>
-                                                <button className="bg-rose-500 text-white py-4 rounded-xl font-bold">Publish Product</button>
+                                                <button className="bg-rose-500 text-white py-5 rounded-full font-bold text-lg shadow-lg">Publish to Store</button>
                                             </form>
                                         </div>
                                     </div>
@@ -206,39 +236,36 @@
                         )}
                     </main>
 
-                    {/* DETAIL MODAL */}
+                    {/* PRODUCT DETAIL OVERLAY */}
                     <AnimatePresence>
                         {selectedProduct && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-white overflow-y-auto">
                                 <div className="max-w-6xl mx-auto px-6 py-12">
-                                    <button onClick={() => setSelectedProduct(null)} className="mb-10 font-bold text-gray-300 hover:text-black transition-colors flex items-center gap-2">
+                                    <button onClick={() => setSelectedProduct(null)} className="mb-10 font-bold text-gray-400 hover:text-black transition-colors flex items-center gap-2">
                                         <i data-lucide="arrow-left" className="w-4 h-4"></i> Back
                                     </button>
                                     
-                                    <div className="grid md:grid-cols-2 gap-12">
+                                    <div className="grid md:grid-cols-2 gap-12 lg:gap-24">
                                         <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
                                             {getImgs(selectedProduct).map((img, i) => (
-                                                <img key={i} src={img} className="w-full aspect-square object-cover rounded-[32px] snap-center flex-shrink-0 bg-gray-50 border border-gray-100" />
+                                                <img key={i} src={img} className="w-full aspect-square object-cover rounded-[40px] snap-center flex-shrink-0 bg-gray-50 border border-gray-100 shadow-xl" />
                                             ))}
                                         </div>
 
                                         <div className="flex flex-col justify-center items-start">
-                                            <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4 text-zinc-900">{selectedProduct.name}</h2>
-                                            <p className="text-2xl font-black text-rose-500 italic mb-8">Rs. {selectedProduct.price}</p>
-                                            <p className="text-gray-500 leading-relaxed mb-10 text-lg">
-                                                {selectedProduct.desc || "Handcrafted with premium pipe cleaners. Every petal is shaped by hand to create a gift that lasts forever."}
+                                            <h2 className="text-5xl md:text-6xl font-bold tracking-tighter mb-4 text-zinc-900">{selectedProduct.name}</h2>
+                                            <p className="text-3xl font-black text-rose-500 italic mb-10 font-display">Rs. {selectedProduct.price}</p>
+                                            <p className="text-gray-500 leading-relaxed mb-12 text-lg">
+                                                {selectedProduct.desc || "Handcrafted with premium pipe cleaners. Every detail is carefully shaped by hand to create a unique piece that lasts forever."}
                                             </p>
                                             
                                             <button 
                                                 disabled={selectedProduct.status !== 'available'}
-                                                onClick={() => {
-                                                    setCart([...cart, selectedProduct]);
-                                                    setSelectedProduct(null);
-                                                }}
-                                                className={`px-10 py-3 rounded-full font-bold text-sm transition-all shadow-md ${
+                                                onClick={() => handleAddToCart(selectedProduct)}
+                                                className={`px-14 py-4 rounded-full font-bold text-sm transition-all shadow-xl ${
                                                     selectedProduct.status === 'available' 
-                                                    ? 'bg-zinc-900 text-white' 
-                                                    : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                                    ? 'bg-zinc-900 text-white hover:scale-105' 
+                                                    : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
                                                 }`}
                                             >
                                                 {selectedProduct.status === 'oos' ? 'Sold Out' : selectedProduct.status === 'soon' ? 'Coming Soon' : 'Add to Bag'}
@@ -250,8 +277,8 @@
                         )}
                     </AnimatePresence>
 
-                    <footer className="py-20 text-center opacity-10">
-                        <p onClick={() => setPage('admin')} className="text-[8px] font-bold tracking-[0.4em] uppercase cursor-pointer">Admin Access</p>
+                    <footer className="py-20 text-center">
+                        <p onClick={() => setPage('admin')} className="text-[10px] font-bold tracking-[0.4em] uppercase cursor-pointer opacity-10 hover:opacity-50 transition-opacity">Admin Dashboard</p>
                     </footer>
                 </div>
             );

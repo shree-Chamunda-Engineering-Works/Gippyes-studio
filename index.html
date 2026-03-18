@@ -44,13 +44,11 @@
         }
         .font-display { font-family: 'Playfair Display', serif; }
         
-        /* Dark Theme Styles */
         .theme-dark { background: #0a0a0c; color: #f4f4f5; }
         .theme-dark .glass-nav { background: rgba(10, 10, 12, 0.7); border-bottom: 1px solid rgba(255,255,255,0.03); }
         .theme-dark .ios-card { background: #141417; border: 1px solid rgba(255,255,255,0.05); }
         .theme-dark input, .theme-dark textarea, .theme-dark select { background: #1c1c21 !important; color: white !important; border: 1px solid rgba(255,255,255,0.08) !important; }
         
-        /* Light Theme Styles */
         .theme-light { background: #fbfbfd; color: #1d1d1f; }
         .theme-light .glass-nav { background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid rgba(0,0,0,0.05); }
         .theme-light .ios-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 24px rgba(0,0,0,0.02); }
@@ -83,14 +81,11 @@
             const [pass, setPass] = useState("");
             const [editTarget, setEditTarget] = useState(null);
             
-            // Customer Details
             const [custName, setCustName] = useState("");
             const [custAdd, setCustAdd] = useState("");
             const [custNum, setCustNum] = useState("");
 
-            useEffect(() => {
-                localStorage.setItem('gs-theme', theme);
-            }, [theme]);
+            useEffect(() => { localStorage.setItem('gs-theme', theme); }, [theme]);
 
             useEffect(() => {
                 const checkFB = setInterval(() => {
@@ -107,7 +102,6 @@
             useEffect(() => { lucide.createIcons(); }, [page, products, cart, selectedProduct, editTarget, theme]);
 
             const total = cart.reduce((s, i) => s + i.price, 0);
-
             const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
             const handleCheckout = () => {
@@ -125,16 +119,12 @@
                             <h1 className="text-xl font-black tracking-tighter">GippyeS <span className="text-rose-500 font-bold text-[10px] uppercase tracking-widest ml-1">Studio</span></h1>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={toggleTheme} className="p-2.5 bg-rose-500/10 text-rose-500 rounded-full">
+                            <button onClick={toggleTheme} className="p-2.5 bg-rose-500/10 text-rose-500 rounded-full transition-transform active:scale-90">
                                 <i data-lucide={theme === 'dark' ? "sun" : "moon"} className="w-5 h-5"></i>
                             </button>
                             <motion.button whileTap={{scale:0.9}} onClick={() => setPage('cart')} className="relative p-2.5 bg-gray-500/5 rounded-full border border-gray-500/10">
                                 <i data-lucide="shopping-bag" className="w-5 h-5"></i>
-                                {cart.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-rose-500 text-[10px] text-white w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                                        {cart.length}
-                                    </span>
-                                )}
+                                {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-rose-500 text-[10px] text-white w-5 h-5 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
                             </motion.button>
                         </div>
                     </nav>
@@ -142,20 +132,16 @@
                     <main className="pt-20">
                         {page === 'home' && (
                             <motion.div initial={{opacity:0}} animate={{opacity:1}}>
-                                {/* HERO SECTION */}
                                 <section className="pt-16 pb-20 px-6 text-center">
                                     <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8 }}>
                                         <h2 className="font-display text-[54px] md:text-[100px] leading-[1] font-bold tracking-tight mb-6">
                                             Handmade <br/>
                                             <span className="text-rose-500 italic font-medium">Pipe Dreams.</span>
                                         </h2>
-                                        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} max-w-sm mx-auto text-lg font-medium leading-relaxed`}>
-                                            Unique pipe cleaner art crafted for your aesthetic moments.
-                                        </p>
+                                        <p className="opacity-50 max-w-sm mx-auto text-lg font-medium">Unique pipe cleaner art crafted for your aesthetic moments.</p>
                                     </motion.div>
                                 </section>
 
-                                {/* PRODUCT GRID */}
                                 <div className="px-6 pb-20 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
                                     {products.map((p, i) => (
                                         <motion.div 
@@ -176,7 +162,7 @@
                                             </div>
                                             <div className="p-5">
                                                 <h3 className="text-[10px] font-bold opacity-50 uppercase tracking-[0.15em] mb-1 truncate">{p.name}</h3>
-                                                <p className="text-xl font-black tracking-tight">Rs. {p.price}</p>
+                                                <p className="text-xl font-black tracking-tight text-rose-500">Rs. {p.price}</p>
                                             </div>
                                         </motion.div>
                                     ))}
@@ -186,33 +172,29 @@
 
                         {page === 'cart' && (
                             <motion.div initial={{opacity:0, x: 20}} animate={{opacity:1, x: 0}} className="max-w-xl mx-auto px-6 py-10">
-                                <h2 className="text-5xl font-black italic font-display mb-10">Your Bag</h2>
+                                <div className="flex items-center gap-4 mb-10">
+                                    <button onClick={() => setPage('home')} className="p-3 bg-gray-500/10 rounded-full"><i data-lucide="chevron-left"></i></button>
+                                    <h2 className="text-4xl font-black italic font-display">Your Bag</h2>
+                                </div>
                                 {cart.length === 0 ? (
-                                    <div className="text-center py-20 bg-gray-500/5 rounded-[40px] border border-dashed border-gray-500/20">
-                                        <p className="opacity-40 font-bold uppercase tracking-widest text-xs">Bag is empty</p>
-                                    </div>
+                                    <div className="text-center py-20 opacity-30 font-bold uppercase tracking-widest text-xs border-2 border-dashed rounded-[40px]">Empty</div>
                                 ) : (
                                     <div className="space-y-6">
                                         <div className="ios-card p-8 space-y-4">
                                             {cart.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-500/5 pb-4 last:border-0 last:pb-0">
+                                                <div key={idx} className="flex justify-between border-b border-gray-500/5 pb-4 last:border-0 last:pb-0">
                                                     <span className="font-bold">{item.name}</span>
                                                     <span className="text-rose-500 font-black">Rs. {item.price}</span>
                                                 </div>
                                             ))}
-                                            <div className="pt-4 flex justify-between items-end">
-                                                <span className="opacity-40 font-bold uppercase tracking-widest text-[10px]">Subtotal</span>
-                                                <span className="text-4xl font-black tracking-tighter">Rs. {total}</span>
-                                            </div>
+                                            <div className="pt-4 flex justify-between items-end"><span className="opacity-40 font-bold text-[10px] uppercase">Total</span><span className="text-4xl font-black tracking-tighter">Rs. {total}</span></div>
                                         </div>
                                         <div className="ios-card p-8 space-y-4">
                                             <input placeholder="Name" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustName(e.target.value)} />
                                             <input placeholder="Phone" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustNum(e.target.value)} />
                                             <textarea placeholder="Address" className="w-full p-4 rounded-2xl outline-none h-24" onChange={e=>setCustAdd(e.target.value)} />
                                         </div>
-                                        <button onClick={handleCheckout} className="w-full bg-rose-500 text-white py-6 rounded-full font-black text-xl shadow-2xl shadow-rose-500/30">
-                                            Confirm Order
-                                        </button>
+                                        <button onClick={handleCheckout} className="w-full bg-rose-500 text-white py-6 rounded-full font-black text-xl shadow-2xl">Confirm Order</button>
                                     </div>
                                 )}
                             </motion.div>
@@ -230,10 +212,10 @@
                                         <button onClick={() => setEditTarget({ name: '', price: '', images: '', desc: '', status: 'available', isNew: true })} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-bold">+ New Item</button>
                                         {products.map(p => (
                                             <div key={p.id} className="ios-card p-4 flex justify-between items-center">
-                                                <span className="font-bold text-sm">{p.name} - {p.status}</span>
+                                                <span className="font-bold text-sm">{p.name}</span>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => setEditTarget(p)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg"><i data-lucide="edit" className="w-4 h-4"></i></button>
-                                                    <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="p-2 bg-gray-500/10 rounded-lg"><i data-lucide="trash" className="w-4 h-4"></i></button>
+                                                    <button onClick={() => setEditTarget(p)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg"><i data-lucide="edit"></i></button>
+                                                    <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="p-2 bg-gray-500/10 rounded-lg"><i data-lucide="trash"></i></button>
                                                 </div>
                                             </div>
                                         ))}
@@ -243,27 +225,42 @@
                         )}
                     </main>
 
-                    {/* PRODUCT DETAIL BOTTOM SHEET */}
+                    {/* PRODUCT DETAIL (IMPROVED NAVIGATION) */}
                     <AnimatePresence>
                         {selectedProduct && (
-                            <div className="fixed inset-0 z-[150] flex items-end">
+                            <div className="fixed inset-0 z-[200] flex items-end">
                                 <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setSelectedProduct(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
                                 <motion.div 
+                                    drag="y" dragConstraints={{ top: 0 }} onDragEnd={(e, info) => info.offset.y > 100 && setSelectedProduct(null)}
                                     initial={{y: "100%"}} animate={{y: 0}} exit={{y: "100%"}} 
                                     transition={{type: 'spring', damping: 30}} 
-                                    className={`relative w-full rounded-t-[50px] p-8 max-h-[90vh] overflow-y-auto border-t ${theme === 'dark' ? 'bg-[#141417] border-white/5' : 'bg-white border-black/5'}`}
+                                    className={`relative w-full rounded-t-[50px] p-8 pb-12 max-h-[94vh] overflow-y-auto border-t shadow-2xl ${theme === 'dark' ? 'bg-[#141417] border-white/5' : 'bg-white border-black/5'}`}
                                 >
-                                    <div className="w-12 h-1.5 bg-gray-500/20 rounded-full mx-auto mb-10" />
+                                    {/* Navigation Header within Modal */}
+                                    <div className="flex justify-between items-center mb-8">
+                                        <button onClick={() => setSelectedProduct(null)} className="flex items-center gap-1 font-bold opacity-50 text-sm hover:opacity-100 transition-opacity">
+                                            <i data-lucide="chevron-left" className="w-5 h-5"></i> Back to Shop
+                                        </button>
+                                        <div className="w-12 h-1.5 bg-gray-500/20 rounded-full" />
+                                        <button onClick={() => setSelectedProduct(null)} className="p-2 bg-gray-500/10 rounded-full hover:bg-rose-500 hover:text-white transition-all">
+                                            <i data-lucide="x" className="w-5 h-5"></i>
+                                        </button>
+                                    </div>
+
                                     <div className="grid md:grid-cols-2 gap-10">
-                                        <img src={(selectedProduct.images || selectedProduct.image || "").split(',')[0]} className="w-full aspect-[4/5] object-cover rounded-[40px]" />
-                                        <div>
+                                        <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
+                                            {(selectedProduct.images || selectedProduct.image || "").split(',').map((img, i) => (
+                                                <img key={i} src={img.trim()} className="w-full aspect-[4/5] object-cover rounded-[40px] snap-center flex-shrink-0" />
+                                            ))}
+                                        </div>
+                                        <div className="py-4">
                                             <h2 className="text-5xl font-extrabold tracking-tighter mb-4">{selectedProduct.name}</h2>
                                             <p className="text-4xl font-display text-rose-500 italic mb-6 font-bold">Rs. {selectedProduct.price}</p>
                                             <p className="opacity-60 leading-relaxed text-lg mb-10">{selectedProduct.desc || "Exquisite artisan pipe cleaner art."}</p>
                                             <button 
                                                 disabled={selectedProduct.status !== 'available'}
-                                                onClick={() => {setCart([...cart, selectedProduct]); setSelectedProduct(null);}}
-                                                className={`w-full py-6 rounded-full font-black text-xl ${selectedProduct.status === 'available' ? 'bg-rose-500 text-white shadow-xl' : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'}`}
+                                                onClick={() => {setCart([...cart, selectedProduct]); setSelectedProduct(null); alert("Added to Bag!");}}
+                                                className={`w-full py-6 rounded-full font-black text-xl transition-all active:scale-95 ${selectedProduct.status === 'available' ? 'bg-rose-500 text-white shadow-xl' : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'}`}
                                             >
                                                 {selectedProduct.status === 'available' ? 'Add to Bag' : 'Not Available'}
                                             </button>
@@ -277,7 +274,7 @@
                     {/* ADMIN EDIT SYSTEM */}
                     <AnimatePresence>
                         {editTarget && (
-                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+                            <div className="fixed inset-0 z-[250] flex items-center justify-center p-6">
                                 <div className="absolute inset-0 bg-black/95" onClick={()=>setEditTarget(null)} />
                                 <motion.form 
                                     initial={{scale: 0.9, opacity: 0}} animate={{scale: 1, opacity: 1}}
@@ -290,7 +287,7 @@
                                     }}
                                     className={`relative w-full max-w-lg p-10 rounded-[40px] space-y-4 border ${theme === 'dark' ? 'bg-[#1c1c21] border-white/10' : 'bg-white border-black/10'}`}
                                 >
-                                    <h3 className="font-bold uppercase tracking-widest text-xs mb-4">Edit Studio Entry</h3>
+                                    <h3 className="font-bold uppercase tracking-widest text-xs mb-4">Edit Item</h3>
                                     <input name="n" defaultValue={editTarget.name} placeholder="Name" className="w-full p-4 rounded-2xl" required />
                                     <input name="p" type="number" defaultValue={editTarget.price} placeholder="Price" className="w-full p-4 rounded-2xl" required />
                                     <textarea name="i" defaultValue={editTarget.images} placeholder="Images (comma separated)" className="w-full p-4 rounded-2xl" required />

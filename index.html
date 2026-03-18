@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GippyeS Studio | Premium Art</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,900;1,900&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&display=swap" rel="stylesheet">
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -33,12 +35,35 @@
     </script>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #ffffff; color: #1d1d1f; -webkit-tap-highlight-color: transparent; }
+        :root { --accent: #fb7185; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
         .font-display { font-family: 'Playfair Display', serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: saturate(180%) blur(20px); }
-        .apple-card { border-radius: 32px; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        /* Dark Theme Styles */
+        .theme-dark { background: #0a0a0c; color: #f4f4f5; }
+        .theme-dark .glass-nav { background: rgba(10, 10, 12, 0.7); border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .theme-dark .ios-card { background: #141417; border: 1px solid rgba(255,255,255,0.05); }
+        .theme-dark input, .theme-dark textarea, .theme-dark select { background: #1c1c21 !important; color: white !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+        
+        /* Light Theme Styles */
+        .theme-light { background: #fbfbfd; color: #1d1d1f; }
+        .theme-light .glass-nav { background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .theme-light .ios-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 24px rgba(0,0,0,0.02); }
+        .theme-light input, .theme-light textarea, .theme-light select { background: #f2f2f7 !important; color: black !important; border: 1px solid rgba(0,0,0,0.05) !important; }
+
+        .glass-nav { backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+        .ios-card { border-radius: 32px; transition: transform 0.3s ease, background-color 0.4s ease; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .status-badge { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+        
+        .status-pill {
+            font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            padding: 5px 12px; border-radius: 100px;
+        }
     </style>
 </head>
 <body>
@@ -49,17 +74,23 @@
         const { motion, AnimatePresence } = window.Motion;
 
         function App() {
+            const [theme, setTheme] = useState(localStorage.getItem('gs-theme') || 'dark');
             const [page, setPage] = useState('home');
             const [products, setProducts] = useState([]);
             const [cart, setCart] = useState([]);
             const [selectedProduct, setSelectedProduct] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
             const [pass, setPass] = useState("");
+            const [editTarget, setEditTarget] = useState(null);
             
-            // Delivery Info
+            // Customer Details
             const [custName, setCustName] = useState("");
             const [custAdd, setCustAdd] = useState("");
             const [custNum, setCustNum] = useState("");
+
+            useEffect(() => {
+                localStorage.setItem('gs-theme', theme);
+            }, [theme]);
 
             useEffect(() => {
                 const checkFB = setInterval(() => {
@@ -73,189 +104,210 @@
                 }, 500);
             }, []);
 
-            useEffect(() => { lucide.createIcons(); }, [page, products, cart, selectedProduct]);
-
-            // Helper to handle multiple images
-            const getImgs = (p) => {
-                if (!p) return [];
-                if (Array.isArray(p.images)) return p.images;
-                if (typeof p.images === 'string') return p.images.split(',').map(s => s.trim());
-                return [p.image || "https://via.placeholder.com/600"];
-            };
+            useEffect(() => { lucide.createIcons(); }, [page, products, cart, selectedProduct, editTarget, theme]);
 
             const total = cart.reduce((s, i) => s + i.price, 0);
 
+            const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+
             const handleCheckout = () => {
-                if (!custName || !custAdd || !custNum) {
-                    alert("Please fill your details first!");
-                    return;
-                }
-                const productList = cart.map(item => `• ${item.name}: Rs. ${item.price}`).join('%0A');
-                const msg = `🛍️ *New Order from GippyeS Studio*%0A%0A*Customer:* ${custName}%0A*Phone:* ${custNum}%0A*Address:* ${custAdd}%0A%0A*Items:*%0A${productList}%0A%0A*Total:* Rs. ${total}%0A%0A📌 *Note:* Payment SS follows below.`;
-
-                window.location.href = `upi://pay?pa=mahirabha0@okhdfcbank&pn=GippyeS%20Studio&am=${total}&cu=INR`;
-                setTimeout(() => {
-                    window.open(`https://wa.me/919601650687?text=${msg}`, '_blank');
-                    setCart([]); setPage('home');
-                }, 2500);
-            };
-
-            const addNewProduct = (e) => {
-                e.preventDefault();
-                const newP = {
-                    name: e.target.n.value,
-                    price: Number(e.target.p.value),
-                    images: e.target.i.value, // Now takes comma separated list
-                    desc: e.target.d.value,
-                    status: e.target.s.value
-                };
-                window.fb.push(window.fb.ref(window.db, 'products'), newP);
-                e.target.reset();
-                alert("Product Added!");
+                if (!custName || !custNum || !custAdd) return alert("Please fill details.");
+                const msg = `🛍️ *Order: GippyeS Studio*%0A*Name:* ${custName}%0A*Items:* ${cart.map(i => i.name).join(', ')}%0A*Total:* Rs.${total}`;
+                window.location.href = `upi://pay?pa=mahirabha0@okhdfcbank&pn=GippyeS&am=${total}&cu=INR`;
+                setTimeout(() => window.open(`https://wa.me/919601650687?text=${msg}`), 2500);
             };
 
             return (
-                <div className="min-h-screen">
+                <div className={`min-h-screen theme-${theme}`}>
                     {/* NAV */}
-                    <nav className="glass-nav border-b border-gray-100 p-4 sticky top-0 z-[100] flex justify-between items-center px-6 md:px-20">
-                        <h1 onClick={() => setPage('home')} className="text-xl font-black cursor-pointer">GippyeS <span className="text-rose-500 text-[10px] uppercase tracking-widest">Studio</span></h1>
-                        <button onClick={() => setPage('cart')} className="relative p-2">
-                            <i data-lucide="shopping-bag" className="w-5 h-5"></i>
-                            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-zinc-900 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
-                        </button>
+                    <nav className="glass-nav fixed top-0 w-full z-[100] px-6 py-4 flex justify-between items-center">
+                        <div onClick={() => setPage('home')} className="cursor-pointer">
+                            <h1 className="text-xl font-black tracking-tighter">GippyeS <span className="text-rose-500 font-bold text-[10px] uppercase tracking-widest ml-1">Studio</span></h1>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button onClick={toggleTheme} className="p-2.5 bg-rose-500/10 text-rose-500 rounded-full">
+                                <i data-lucide={theme === 'dark' ? "sun" : "moon"} className="w-5 h-5"></i>
+                            </button>
+                            <motion.button whileTap={{scale:0.9}} onClick={() => setPage('cart')} className="relative p-2.5 bg-gray-500/5 rounded-full border border-gray-500/10">
+                                <i data-lucide="shopping-bag" className="w-5 h-5"></i>
+                                {cart.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-rose-500 text-[10px] text-white w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                                        {cart.length}
+                                    </span>
+                                )}
+                            </motion.button>
+                        </div>
                     </nav>
 
-                    <main>
+                    <main className="pt-20">
                         {page === 'home' && (
-                            <div className="max-w-7xl mx-auto px-6 py-12">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                    {products.map(p => (
-                                        <div key={p.id} onClick={() => setSelectedProduct(p)} className="apple-card group cursor-pointer">
-                                            <div className="aspect-[4/5] rounded-[30px] overflow-hidden bg-gray-50 mb-4 relative border shadow-sm">
-                                                <img src={getImgs(p)[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                                                {p.status === 'oos' && <div className="absolute inset-0 bg-white/60 flex items-center justify-center status-badge">Sold Out</div>}
-                                                {p.status === 'soon' && <div className="absolute inset-0 bg-rose-50/20 flex items-center justify-center status-badge text-rose-500">Coming Soon</div>}
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}}>
+                                {/* HERO SECTION */}
+                                <section className="pt-16 pb-20 px-6 text-center">
+                                    <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8 }}>
+                                        <h2 className="font-display text-[54px] md:text-[100px] leading-[1] font-bold tracking-tight mb-6">
+                                            Handmade <br/>
+                                            <span className="text-rose-500 italic font-medium">Pipe Dreams.</span>
+                                        </h2>
+                                        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} max-w-sm mx-auto text-lg font-medium leading-relaxed`}>
+                                            Unique pipe cleaner art crafted for your aesthetic moments.
+                                        </p>
+                                    </motion.div>
+                                </section>
+
+                                {/* PRODUCT GRID */}
+                                <div className="px-6 pb-20 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+                                    {products.map((p, i) => (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                                            key={p.id} whileTap={{ scale: 0.97 }}
+                                            onClick={() => setSelectedProduct(p)} 
+                                            className="ios-card overflow-hidden cursor-pointer group"
+                                        >
+                                            <div className="aspect-[4/5] overflow-hidden relative">
+                                                <img src={(p.images || p.image || "").split(',')[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
+                                                {p.status !== 'available' && (
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
+                                                        <span className={`status-pill ${p.status === 'oos' ? 'bg-white text-black' : 'bg-rose-500 text-white'}`}>
+                                                            {p.status === 'oos' ? 'Sold Out' : 'Soon'}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <h3 className="font-bold text-sm px-2">{p.name}</h3>
-                                            <p className="text-rose-500 font-black text-sm px-2">Rs. {p.price}</p>
-                                        </div>
+                                            <div className="p-5">
+                                                <h3 className="text-[10px] font-bold opacity-50 uppercase tracking-[0.15em] mb-1 truncate">{p.name}</h3>
+                                                <p className="text-xl font-black tracking-tight">Rs. {p.price}</p>
+                                            </div>
+                                        </motion.div>
                                     ))}
                                 </div>
-                            </div>
+                            </motion.div>
                         )}
 
                         {page === 'cart' && (
-                            <div className="max-w-xl mx-auto px-6 py-20">
-                                <h2 className="text-4xl font-black mb-10 italic">Your Bag</h2>
-                                {cart.length === 0 ? <p className="text-gray-400">Bag is empty.</p> : (
-                                    <div className="space-y-8">
-                                        <div className="bg-gray-50 p-6 rounded-[32px] space-y-4">
-                                            {cart.map((item, i) => (
-                                                <div key={i} className="flex justify-between items-center font-bold text-sm">
-                                                    <span>{item.name}</span>
-                                                    <span className="text-rose-500">Rs. {item.price}</span>
+                            <motion.div initial={{opacity:0, x: 20}} animate={{opacity:1, x: 0}} className="max-w-xl mx-auto px-6 py-10">
+                                <h2 className="text-5xl font-black italic font-display mb-10">Your Bag</h2>
+                                {cart.length === 0 ? (
+                                    <div className="text-center py-20 bg-gray-500/5 rounded-[40px] border border-dashed border-gray-500/20">
+                                        <p className="opacity-40 font-bold uppercase tracking-widest text-xs">Bag is empty</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="ios-card p-8 space-y-4">
+                                            {cart.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-500/5 pb-4 last:border-0 last:pb-0">
+                                                    <span className="font-bold">{item.name}</span>
+                                                    <span className="text-rose-500 font-black">Rs. {item.price}</span>
                                                 </div>
                                             ))}
-                                            <div className="border-t pt-4 flex justify-between text-2xl font-black">
-                                                <span>Total</span>
-                                                <span>Rs. {total}</span>
+                                            <div className="pt-4 flex justify-between items-end">
+                                                <span className="opacity-40 font-bold uppercase tracking-widest text-[10px]">Subtotal</span>
+                                                <span className="text-4xl font-black tracking-tighter">Rs. {total}</span>
                                             </div>
                                         </div>
-                                        
-                                        <div className="bg-white border p-6 rounded-[32px] space-y-4">
-                                            <input placeholder="Full Name" className="w-full p-4 bg-gray-50 rounded-xl outline-none" onChange={(e)=>setCustName(e.target.value)} />
-                                            <input placeholder="WhatsApp Number" className="w-full p-4 bg-gray-50 rounded-xl outline-none" onChange={(e)=>setCustNum(e.target.value)} />
-                                            <textarea placeholder="Address with Pincode" className="w-full p-4 bg-gray-50 rounded-xl outline-none h-24" onChange={(e)=>setCustAdd(e.target.value)} />
+                                        <div className="ios-card p-8 space-y-4">
+                                            <input placeholder="Name" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustName(e.target.value)} />
+                                            <input placeholder="Phone" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustNum(e.target.value)} />
+                                            <textarea placeholder="Address" className="w-full p-4 rounded-2xl outline-none h-24" onChange={e=>setCustAdd(e.target.value)} />
                                         </div>
-
-                                        <button onClick={handleCheckout} className="w-full bg-zinc-900 text-white py-6 rounded-full font-bold shadow-xl active:scale-95 transition-all">
-                                            PAY & ORDER
+                                        <button onClick={handleCheckout} className="w-full bg-rose-500 text-white py-6 rounded-full font-black text-xl shadow-2xl shadow-rose-500/30">
+                                            Confirm Order
                                         </button>
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
                         )}
 
                         {page === 'admin' && (
-                            <div className="max-w-2xl mx-auto px-6 py-20">
+                            <div className="max-w-xl mx-auto px-6 py-10">
                                 {!isAdmin ? (
-                                    <div className="text-center bg-gray-50 p-12 rounded-[40px]">
-                                        <input type="password" placeholder="Key" className="p-4 rounded-xl mb-4" onChange={e=>setPass(e.target.value)} />
-                                        <button onClick={() => pass === 'gippyes123' && setIsAdmin(true)} className="block mx-auto bg-black text-white px-10 py-3 rounded-full font-bold">Access</button>
+                                    <div className="ios-card p-10 text-center">
+                                        <input type="password" placeholder="Passcode" className="p-4 rounded-2xl mb-4 text-center w-full" onChange={e=>setPass(e.target.value)} />
+                                        <button onClick={() => pass === 'gippyes123' && setIsAdmin(true)} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-bold">Verify</button>
                                     </div>
                                 ) : (
-                                    <div className="space-y-8">
-                                        <form onSubmit={addNewProduct} className="bg-gray-50 p-8 rounded-[40px] grid gap-4">
-                                            <h3 className="font-bold text-xl mb-4">Add Product</h3>
-                                            <input name="n" placeholder="Name" className="p-4 rounded-xl border-none" required />
-                                            <input name="p" type="number" placeholder="Price" className="p-4 rounded-xl border-none" required />
-                                            <textarea name="i" placeholder="Image URLs (Separated by commas)" className="p-4 rounded-xl border-none" required />
-                                            <textarea name="d" placeholder="Description" className="p-4 rounded-xl border-none" />
-                                            <select name="s" className="p-4 rounded-xl border-none font-bold">
-                                                <option value="available">Available</option>
-                                                <option value="oos">Sold Out</option>
-                                                <option value="soon">Coming Soon</option>
-                                            </select>
-                                            <button className="bg-rose-500 text-white py-4 rounded-xl font-bold">Update Globally</button>
-                                        </form>
-                                        <div className="grid gap-2">
-                                            {products.map(p => (
-                                                <div key={p.id} className="flex justify-between items-center p-4 bg-white border rounded-2xl">
-                                                    <span className="text-sm font-bold">{p.name} - {p.status}</span>
-                                                    <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="text-red-500 text-xs font-bold">Delete</button>
+                                    <div className="space-y-6">
+                                        <button onClick={() => setEditTarget({ name: '', price: '', images: '', desc: '', status: 'available', isNew: true })} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-bold">+ New Item</button>
+                                        {products.map(p => (
+                                            <div key={p.id} className="ios-card p-4 flex justify-between items-center">
+                                                <span className="font-bold text-sm">{p.name} - {p.status}</span>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => setEditTarget(p)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg"><i data-lucide="edit" className="w-4 h-4"></i></button>
+                                                    <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="p-2 bg-gray-500/10 rounded-lg"><i data-lucide="trash" className="w-4 h-4"></i></button>
                                                 </div>
-                                            ))}
-                                        </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
                         )}
                     </main>
 
-                    {/* DETAIL PAGE MODAL */}
+                    {/* PRODUCT DETAIL BOTTOM SHEET */}
                     <AnimatePresence>
                         {selectedProduct && (
-                            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed inset-0 z-[150] bg-white overflow-y-auto">
-                                <div className="max-w-6xl mx-auto px-6 py-12">
-                                    <button onClick={() => setSelectedProduct(null)} className="mb-10 font-bold text-gray-300 flex items-center gap-2">
-                                        <i data-lucide="arrow-left" className="w-4 h-4"></i> Back to Shop
-                                    </button>
-                                    
-                                    <div className="grid md:grid-cols-2 gap-12 items-start">
-                                        {/* Multi-Image Gallery */}
-                                        <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
-                                            {getImgs(selectedProduct).map((img, i) => (
-                                                <img key={i} src={img} className="w-full aspect-square object-cover rounded-[40px] snap-center flex-shrink-0 bg-gray-50 border shadow-md" />
-                                            ))}
-                                        </div>
-
-                                        <div className="space-y-8">
-                                            <h2 className="text-5xl font-extrabold tracking-tighter leading-none">{selectedProduct.name}</h2>
-                                            <p className="text-4xl font-black text-rose-500 italic font-display">Rs. {selectedProduct.price}</p>
-                                            <div className="bg-gray-50 p-6 rounded-[32px] text-gray-500 leading-relaxed font-medium">
-                                                {selectedProduct.desc || "Handcrafted aesthetic art from GippyeS Studio. Every piece is made with premium materials and high-quality pipe cleaners."}
-                                            </div>
-                                            
+                            <div className="fixed inset-0 z-[150] flex items-end">
+                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setSelectedProduct(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+                                <motion.div 
+                                    initial={{y: "100%"}} animate={{y: 0}} exit={{y: "100%"}} 
+                                    transition={{type: 'spring', damping: 30}} 
+                                    className={`relative w-full rounded-t-[50px] p-8 max-h-[90vh] overflow-y-auto border-t ${theme === 'dark' ? 'bg-[#141417] border-white/5' : 'bg-white border-black/5'}`}
+                                >
+                                    <div className="w-12 h-1.5 bg-gray-500/20 rounded-full mx-auto mb-10" />
+                                    <div className="grid md:grid-cols-2 gap-10">
+                                        <img src={(selectedProduct.images || selectedProduct.image || "").split(',')[0]} className="w-full aspect-[4/5] object-cover rounded-[40px]" />
+                                        <div>
+                                            <h2 className="text-5xl font-extrabold tracking-tighter mb-4">{selectedProduct.name}</h2>
+                                            <p className="text-4xl font-display text-rose-500 italic mb-6 font-bold">Rs. {selectedProduct.price}</p>
+                                            <p className="opacity-60 leading-relaxed text-lg mb-10">{selectedProduct.desc || "Exquisite artisan pipe cleaner art."}</p>
                                             <button 
                                                 disabled={selectedProduct.status !== 'available'}
-                                                onClick={() => {setCart([...cart, selectedProduct]); setSelectedProduct(null); alert("Added to Bag!");}}
-                                                className={`w-full py-6 rounded-full font-bold text-lg shadow-2xl transition-all ${
-                                                    selectedProduct.status === 'available' 
-                                                    ? 'bg-zinc-900 text-white active:scale-95' 
-                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                }`}
+                                                onClick={() => {setCart([...cart, selectedProduct]); setSelectedProduct(null);}}
+                                                className={`w-full py-6 rounded-full font-black text-xl ${selectedProduct.status === 'available' ? 'bg-rose-500 text-white shadow-xl' : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'}`}
                                             >
-                                                {selectedProduct.status === 'oos' ? 'Sold Out' : selectedProduct.status === 'soon' ? 'Coming Soon' : 'Add to Bag'}
+                                                {selectedProduct.status === 'available' ? 'Add to Bag' : 'Not Available'}
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                            </motion.div>
+                                </motion.div>
+                            </div>
                         )}
                     </AnimatePresence>
 
-                    <footer className="py-20 text-center opacity-10">
-                        <p onClick={() => setPage('admin')} className="text-[8px] font-bold tracking-[0.5em] uppercase cursor-pointer">Admin Access</p>
+                    {/* ADMIN EDIT SYSTEM */}
+                    <AnimatePresence>
+                        {editTarget && (
+                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+                                <div className="absolute inset-0 bg-black/95" onClick={()=>setEditTarget(null)} />
+                                <motion.form 
+                                    initial={{scale: 0.9, opacity: 0}} animate={{scale: 1, opacity: 1}}
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const data = { name: e.target.n.value, price: Number(e.target.p.value), images: e.target.i.value, desc: e.target.d.value, status: e.target.s.value };
+                                        if(editTarget.isNew) window.fb.push(window.fb.ref(window.db, 'products'), data);
+                                        else window.fb.update(window.fb.ref(window.db, `products/${editTarget.id}`), data);
+                                        setEditTarget(null);
+                                    }}
+                                    className={`relative w-full max-w-lg p-10 rounded-[40px] space-y-4 border ${theme === 'dark' ? 'bg-[#1c1c21] border-white/10' : 'bg-white border-black/10'}`}
+                                >
+                                    <h3 className="font-bold uppercase tracking-widest text-xs mb-4">Edit Studio Entry</h3>
+                                    <input name="n" defaultValue={editTarget.name} placeholder="Name" className="w-full p-4 rounded-2xl" required />
+                                    <input name="p" type="number" defaultValue={editTarget.price} placeholder="Price" className="w-full p-4 rounded-2xl" required />
+                                    <textarea name="i" defaultValue={editTarget.images} placeholder="Images (comma separated)" className="w-full p-4 rounded-2xl" required />
+                                    <textarea name="d" defaultValue={editTarget.desc} placeholder="Desc" className="w-full p-4 rounded-2xl h-24" />
+                                    <select name="s" defaultValue={editTarget.status} className="w-full p-4 rounded-2xl font-bold">
+                                        <option value="available">Available</option>
+                                        <option value="oos">Sold Out</option>
+                                        <option value="soon">Coming Soon</option>
+                                    </select>
+                                    <button className="w-full bg-rose-500 text-white py-5 rounded-2xl font-black">Sync with Web</button>
+                                </motion.form>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    <footer className="mt-20 py-16 text-center opacity-20">
+                        <p onClick={() => setPage('admin')} className="text-[10px] font-black tracking-[1em] uppercase cursor-pointer italic">Console</p>
                     </footer>
                 </div>
             );

@@ -40,28 +40,25 @@
             font-family: 'Plus Jakarta Sans', sans-serif; 
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
-            transition: background-color 0.4s ease, color 0.4s ease;
+            transition: background-color 0.4s ease;
         }
         .font-display { font-family: 'Playfair Display', serif; }
         
         .theme-dark { background: #0a0a0c; color: #f4f4f5; }
-        .theme-dark .glass-nav { background: rgba(10, 10, 12, 0.7); border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .theme-dark .glass-nav { background: rgba(10, 10, 12, 0.8); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .theme-dark .ios-card { background: #141417; border: 1px solid rgba(255,255,255,0.05); }
-        .theme-dark input, .theme-dark textarea, .theme-dark select { background: #1c1c21 !important; color: white !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+        .theme-dark input, .theme-dark textarea, .theme-dark select { background: #1c1c21 !important; color: white !important; border: 1px solid rgba(255,255,255,0.1) !important; }
         
         .theme-light { background: #fbfbfd; color: #1d1d1f; }
-        .theme-light .glass-nav { background: rgba(255, 255, 255, 0.7); border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .theme-light .ios-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 24px rgba(0,0,0,0.02); }
-        .theme-light input, .theme-light textarea, .theme-light select { background: #f2f2f7 !important; color: black !important; border: 1px solid rgba(0,0,0,0.05) !important; }
+        .theme-light .glass-nav { background: rgba(255, 255, 255, 0.8); border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .theme-light .ios-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .theme-light input, .theme-light textarea, .theme-light select { background: #f2f2f7 !important; color: black !important; border: 1px solid rgba(0,0,0,0.08) !important; }
 
         .glass-nav { backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
-        .ios-card { border-radius: 32px; transition: transform 0.3s ease, background-color 0.4s ease; }
+        .ios-card { border-radius: 28px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        .status-pill {
-            font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
-            padding: 5px 12px; border-radius: 100px;
-        }
+        .status-pill { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; padding: 5px 12px; border-radius: 100px; }
+        .toast-shadow { box-shadow: 0 10px 30px rgba(251, 113, 133, 0.3); }
     </style>
 </head>
 <body>
@@ -80,7 +77,8 @@
             const [isAdmin, setIsAdmin] = useState(false);
             const [pass, setPass] = useState("");
             const [editTarget, setEditTarget] = useState(null);
-            
+            const [notif, setNotif] = useState({ show: false, msg: "" });
+
             const [custName, setCustName] = useState("");
             const [custAdd, setCustAdd] = useState("");
             const [custNum, setCustNum] = useState("");
@@ -99,27 +97,59 @@
                 }, 500);
             }, []);
 
-            useEffect(() => { lucide.createIcons(); }, [page, products, cart, selectedProduct, editTarget, theme]);
+            useEffect(() => { lucide.createIcons(); }, [page, products, cart, selectedProduct, editTarget, theme, notif]);
 
             const total = cart.reduce((s, i) => s + i.price, 0);
             const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
+            const triggerNotif = (msg) => {
+                setNotif({ show: true, msg });
+                setTimeout(() => setNotif({ show: false, msg: "" }), 3000);
+            };
+
+            const openProduct = (p) => {
+                setSelectedProduct(p);
+                setPage('details');
+                window.scrollTo(0,0);
+            };
+
+            const addToBag = (p) => {
+                setCart([...cart, p]);
+                triggerNotif("Added to Bag!");
+            };
+
+            const removeFromCart = (index) => {
+                setCart(cart.filter((_, i) => i !== index));
+                triggerNotif("Removed from Bag");
+            };
+
             const handleCheckout = () => {
-                if (!custName || !custNum || !custAdd) return alert("Please fill details.");
-                const msg = `🛍️ *Order: GippyeS Studio*%0A*Name:* ${custName}%0A*Items:* ${cart.map(i => i.name).join(', ')}%0A*Total:* Rs.${total}`;
+                if (!custName || !custNum || !custAdd) return triggerNotif("Please fill details");
+                const msg = `🛍️ *Order: GippyeS Studio*%0A*Name:* ${custName}%0A*Total:* Rs.${total}`;
                 window.location.href = `upi://pay?pa=mahirabha0@okhdfcbank&pn=GippyeS&am=${total}&cu=INR`;
                 setTimeout(() => window.open(`https://wa.me/919601650687?text=${msg}`), 2500);
             };
 
             return (
                 <div className={`min-h-screen theme-${theme}`}>
+                    {/* CUSTOM TOAST */}
+                    <AnimatePresence>
+                        {notif.show && (
+                            <motion.div initial={{ y: -100 }} animate={{ y: 24 }} exit={{ y: -100 }} className="fixed top-0 left-0 right-0 z-[300] flex justify-center px-6 pointer-events-none">
+                                <div className="toast-shadow bg-rose-500 text-white px-8 py-3 rounded-full font-bold flex items-center gap-2 text-sm pointer-events-auto">
+                                    <i data-lucide="check" className="w-4 h-4"></i> {notif.msg}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     {/* NAV */}
                     <nav className="glass-nav fixed top-0 w-full z-[100] px-6 py-4 flex justify-between items-center">
                         <div onClick={() => setPage('home')} className="cursor-pointer">
-                            <h1 className="text-xl font-black tracking-tighter">GippyeS <span className="text-rose-500 font-bold text-[10px] uppercase tracking-widest ml-1">Studio</span></h1>
+                            <h1 className="text-xl font-black tracking-tighter italic">GippyeS <span className="text-rose-500 font-bold text-[10px] uppercase tracking-widest not-italic">Studio</span></h1>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={toggleTheme} className="p-2.5 bg-rose-500/10 text-rose-500 rounded-full transition-transform active:scale-90">
+                            <button onClick={toggleTheme} className="p-2.5 bg-rose-500/10 text-rose-500 rounded-full active:scale-90 transition-transform">
                                 <i data-lucide={theme === 'dark' ? "sun" : "moon"} className="w-5 h-5"></i>
                             </button>
                             <motion.button whileTap={{scale:0.9}} onClick={() => setPage('cart')} className="relative p-2.5 bg-gray-500/5 rounded-full border border-gray-500/10">
@@ -130,146 +160,135 @@
                     </nav>
 
                     <main className="pt-20">
-                        {page === 'home' && (
-                            <motion.div initial={{opacity:0}} animate={{opacity:1}}>
-                                <section className="pt-16 pb-20 px-6 text-center">
-                                    <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8 }}>
-                                        <h2 className="font-display text-[54px] md:text-[100px] leading-[1] font-bold tracking-tight mb-6">
-                                            Handmade <br/>
-                                            <span className="text-rose-500 italic font-medium">Pipe Dreams.</span>
+                        <AnimatePresence mode="wait">
+                            {/* HOME PAGE */}
+                            {page === 'home' && (
+                                <motion.div key="home" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}>
+                                    <section className="pt-12 pb-16 px-6 text-center">
+                                        <h2 className="font-display text-[54px] md:text-[90px] leading-[1] font-bold tracking-tight mb-4">
+                                            Handmade <br/> <span className="text-rose-500 italic font-medium">Pipe Dreams.</span>
                                         </h2>
-                                        <p className="opacity-50 max-w-sm mx-auto text-lg font-medium">Unique pipe cleaner art crafted for your aesthetic moments.</p>
-                                    </motion.div>
-                                </section>
+                                        <p className="opacity-40 max-w-xs mx-auto text-lg font-medium">Aesthetic pipe cleaner art for your collection.</p>
+                                    </section>
 
-                                <div className="px-6 pb-20 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                                    {products.map((p, i) => (
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                                            key={p.id} whileTap={{ scale: 0.97 }}
-                                            onClick={() => setSelectedProduct(p)} 
-                                            className="ios-card overflow-hidden cursor-pointer group"
-                                        >
-                                            <div className="aspect-[4/5] overflow-hidden relative">
-                                                <img src={(p.images || p.image || "").split(',')[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
-                                                {p.status !== 'available' && (
-                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
-                                                        <span className={`status-pill ${p.status === 'oos' ? 'bg-white text-black' : 'bg-rose-500 text-white'}`}>
-                                                            {p.status === 'oos' ? 'Sold Out' : 'Soon'}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-[10px] font-bold opacity-50 uppercase tracking-[0.15em] mb-1 truncate">{p.name}</h3>
-                                                <p className="text-xl font-black tracking-tight text-rose-500">Rs. {p.price}</p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {page === 'cart' && (
-                            <motion.div initial={{opacity:0, x: 20}} animate={{opacity:1, x: 0}} className="max-w-xl mx-auto px-6 py-10">
-                                <div className="flex items-center gap-4 mb-10">
-                                    <button onClick={() => setPage('home')} className="p-3 bg-gray-500/10 rounded-full"><i data-lucide="chevron-left"></i></button>
-                                    <h2 className="text-4xl font-black italic font-display">Your Bag</h2>
-                                </div>
-                                {cart.length === 0 ? (
-                                    <div className="text-center py-20 opacity-30 font-bold uppercase tracking-widest text-xs border-2 border-dashed rounded-[40px]">Empty</div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        <div className="ios-card p-8 space-y-4">
-                                            {cart.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between border-b border-gray-500/5 pb-4 last:border-0 last:pb-0">
-                                                    <span className="font-bold">{item.name}</span>
-                                                    <span className="text-rose-500 font-black">Rs. {item.price}</span>
+                                    <div className="px-6 pb-20 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {products.map((p, i) => (
+                                            <div key={p.id} onClick={() => openProduct(p)} className="ios-card overflow-hidden cursor-pointer group">
+                                                <div className="aspect-[4/5] overflow-hidden relative">
+                                                    <img src={(p.images || p.image || "").split(',')[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    {p.status !== 'available' && (
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><span className="status-pill bg-white text-black">{p.status === 'oos' ? 'Sold Out' : 'Soon'}</span></div>
+                                                    )}
                                                 </div>
-                                            ))}
-                                            <div className="pt-4 flex justify-between items-end"><span className="opacity-40 font-bold text-[10px] uppercase">Total</span><span className="text-4xl font-black tracking-tighter">Rs. {total}</span></div>
-                                        </div>
-                                        <div className="ios-card p-8 space-y-4">
-                                            <input placeholder="Name" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustName(e.target.value)} />
-                                            <input placeholder="Phone" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustNum(e.target.value)} />
-                                            <textarea placeholder="Address" className="w-full p-4 rounded-2xl outline-none h-24" onChange={e=>setCustAdd(e.target.value)} />
-                                        </div>
-                                        <button onClick={handleCheckout} className="w-full bg-rose-500 text-white py-6 rounded-full font-black text-xl shadow-2xl">Confirm Order</button>
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-
-                        {page === 'admin' && (
-                            <div className="max-w-xl mx-auto px-6 py-10">
-                                {!isAdmin ? (
-                                    <div className="ios-card p-10 text-center">
-                                        <input type="password" placeholder="Passcode" className="p-4 rounded-2xl mb-4 text-center w-full" onChange={e=>setPass(e.target.value)} />
-                                        <button onClick={() => pass === 'gippyes123' && setIsAdmin(true)} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-bold">Verify</button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        <button onClick={() => setEditTarget({ name: '', price: '', images: '', desc: '', status: 'available', isNew: true })} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-bold">+ New Item</button>
-                                        {products.map(p => (
-                                            <div key={p.id} className="ios-card p-4 flex justify-between items-center">
-                                                <span className="font-bold text-sm">{p.name}</span>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => setEditTarget(p)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg"><i data-lucide="edit"></i></button>
-                                                    <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="p-2 bg-gray-500/10 rounded-lg"><i data-lucide="trash"></i></button>
+                                                <div className="p-4">
+                                                    <h3 className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1 truncate">{p.name}</h3>
+                                                    <p className="text-lg font-black text-rose-500">Rs. {p.price}</p>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </main>
+                                </motion.div>
+                            )}
 
-                    {/* PRODUCT DETAIL (IMPROVED NAVIGATION) */}
-                    <AnimatePresence>
-                        {selectedProduct && (
-                            <div className="fixed inset-0 z-[200] flex items-end">
-                                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setSelectedProduct(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-                                <motion.div 
-                                    drag="y" dragConstraints={{ top: 0 }} onDragEnd={(e, info) => info.offset.y > 100 && setSelectedProduct(null)}
-                                    initial={{y: "100%"}} animate={{y: 0}} exit={{y: "100%"}} 
-                                    transition={{type: 'spring', damping: 30}} 
-                                    className={`relative w-full rounded-t-[50px] p-8 pb-12 max-h-[94vh] overflow-y-auto border-t shadow-2xl ${theme === 'dark' ? 'bg-[#141417] border-white/5' : 'bg-white border-black/5'}`}
-                                >
-                                    {/* Navigation Header within Modal */}
-                                    <div className="flex justify-between items-center mb-8">
-                                        <button onClick={() => setSelectedProduct(null)} className="flex items-center gap-1 font-bold opacity-50 text-sm hover:opacity-100 transition-opacity">
-                                            <i data-lucide="chevron-left" className="w-5 h-5"></i> Back to Shop
-                                        </button>
-                                        <div className="w-12 h-1.5 bg-gray-500/20 rounded-full" />
-                                        <button onClick={() => setSelectedProduct(null)} className="p-2 bg-gray-500/10 rounded-full hover:bg-rose-500 hover:text-white transition-all">
-                                            <i data-lucide="x" className="w-5 h-5"></i>
-                                        </button>
-                                    </div>
-
+                            {/* PRODUCT DETAILS PAGE (FULL PAGE) */}
+                            {page === 'details' && selectedProduct && (
+                                <motion.div key="details" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 50, opacity: 0 }} className="max-w-4xl mx-auto px-6 py-8">
+                                    <button onClick={() => setPage('home')} className="flex items-center gap-2 font-bold mb-8 opacity-50 hover:opacity-100 transition-opacity">
+                                        <i data-lucide="arrow-left" className="w-5 h-5"></i> Back to Shop
+                                    </button>
+                                    
                                     <div className="grid md:grid-cols-2 gap-10">
-                                        <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
-                                            {(selectedProduct.images || selectedProduct.image || "").split(',').map((img, i) => (
-                                                <img key={i} src={img.trim()} className="w-full aspect-[4/5] object-cover rounded-[40px] snap-center flex-shrink-0" />
-                                            ))}
+                                        <div className="space-y-4">
+                                            <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory">
+                                                {(selectedProduct.images || selectedProduct.image || "").split(',').map((img, i) => (
+                                                    <img key={i} src={img.trim()} className="w-full aspect-square object-cover rounded-[32px] snap-center flex-shrink-0 ios-card" />
+                                                ))}
+                                            </div>
+                                            <div className="flex justify-center gap-1 opacity-20">
+                                                <i data-lucide="more-horizontal"></i>
+                                            </div>
                                         </div>
-                                        <div className="py-4">
-                                            <h2 className="text-5xl font-extrabold tracking-tighter mb-4">{selectedProduct.name}</h2>
-                                            <p className="text-4xl font-display text-rose-500 italic mb-6 font-bold">Rs. {selectedProduct.price}</p>
-                                            <p className="opacity-60 leading-relaxed text-lg mb-10">{selectedProduct.desc || "Exquisite artisan pipe cleaner art."}</p>
+                                        
+                                        <div className="space-y-6">
+                                            <h2 className="text-4xl md:text-6xl font-extrabold tracking-tighter leading-none">{selectedProduct.name}</h2>
+                                            <p className="text-4xl font-display text-rose-500 font-bold italic">Rs. {selectedProduct.price}</p>
+                                            <div className="ios-card p-6 opacity-60 leading-relaxed font-medium">
+                                                {selectedProduct.desc || "Exquisite artisan pipe cleaner art, handmade with premium materials for a high-quality aesthetic finish."}
+                                            </div>
+                                            
                                             <button 
                                                 disabled={selectedProduct.status !== 'available'}
-                                                onClick={() => {setCart([...cart, selectedProduct]); setSelectedProduct(null); alert("Added to Bag!");}}
-                                                className={`w-full py-6 rounded-full font-black text-xl transition-all active:scale-95 ${selectedProduct.status === 'available' ? 'bg-rose-500 text-white shadow-xl' : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'}`}
+                                                onClick={() => addToBag(selectedProduct)}
+                                                className={`w-full py-6 rounded-full font-black text-xl transition-all active:scale-95 shadow-xl ${selectedProduct.status === 'available' ? 'bg-rose-500 text-white shadow-rose-500/20' : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'}`}
                                             >
                                                 {selectedProduct.status === 'available' ? 'Add to Bag' : 'Not Available'}
                                             </button>
                                         </div>
                                     </div>
                                 </motion.div>
-                            </div>
-                        )}
-                    </AnimatePresence>
+                            )}
+
+                            {/* CART PAGE */}
+                            {page === 'cart' && (
+                                <motion.div key="cart" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="max-w-xl mx-auto px-6 py-10">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <button onClick={() => setPage('home')} className="p-3 bg-gray-500/10 rounded-full"><i data-lucide="chevron-left"></i></button>
+                                        <h2 className="text-4xl font-black italic font-display">Bag</h2>
+                                    </div>
+                                    
+                                    {cart.length === 0 ? (
+                                        <div className="text-center py-20 opacity-20 font-bold uppercase tracking-widest text-xs border-2 border-dashed rounded-[40px]">Empty</div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <div className="ios-card p-6 space-y-4">
+                                                {cart.map((item, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center border-b border-gray-500/5 pb-4 last:border-0 last:pb-0">
+                                                        <div className="flex items-center gap-4">
+                                                            <img src={(item.images || item.image || "").split(',')[0]} className="w-12 h-12 rounded-2xl object-cover" />
+                                                            <p className="font-bold text-sm">{item.name}</p>
+                                                        </div>
+                                                        <button onClick={() => removeFromCart(idx)} className="p-2 text-rose-500"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                                    </div>
+                                                ))}
+                                                <div className="pt-4 flex justify-between items-end"><span className="opacity-40 font-bold text-[10px] uppercase">Total</span><span className="text-4xl font-black tracking-tighter">Rs. {total}</span></div>
+                                            </div>
+                                            <div className="ios-card p-8 space-y-4">
+                                                <input placeholder="Full Name" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustName(e.target.value)} />
+                                                <input placeholder="WhatsApp Number" className="w-full p-4 rounded-2xl outline-none" onChange={e=>setCustNum(e.target.value)} />
+                                                <textarea placeholder="Full Address with Pincode" className="w-full p-4 rounded-2xl outline-none h-24" onChange={e=>setCustAdd(e.target.value)} />
+                                            </div>
+                                            <button onClick={handleCheckout} className="w-full bg-rose-500 text-white py-6 rounded-full font-black text-xl shadow-2xl">Pay & Order</button>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+
+                            {/* ADMIN PAGE */}
+                            {page === 'admin' && (
+                                <div className="max-w-xl mx-auto px-6 py-10">
+                                    {!isAdmin ? (
+                                        <div className="ios-card p-10 text-center">
+                                            <input type="password" placeholder="Passcode" className="p-4 rounded-2xl mb-4 text-center w-full" onChange={e=>setPass(e.target.value)} />
+                                            <button onClick={() => pass === 'gippyes123' && setIsAdmin(true)} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-bold">Verify</button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <button onClick={() => setEditTarget({ name: '', price: '', images: '', desc: '', status: 'available', isNew: true })} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-bold transition-all active:scale-95">+ New Product</button>
+                                            {products.map(p => (
+                                                <div key={p.id} className="ios-card p-4 flex justify-between items-center">
+                                                    <span className="font-bold text-sm truncate pr-4">{p.name}</span>
+                                                    <div className="flex gap-2 shrink-0">
+                                                        <button onClick={() => setEditTarget(p)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg"><i data-lucide="edit-3" className="w-4 h-4"></i></button>
+                                                        <button onClick={() => window.fb.remove(window.fb.ref(window.db, `products/${p.id}`))} className="p-2 bg-gray-500/10 rounded-lg"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </AnimatePresence>
+                    </main>
 
                     {/* ADMIN EDIT SYSTEM */}
                     <AnimatePresence>
@@ -284,27 +303,28 @@
                                         if(editTarget.isNew) window.fb.push(window.fb.ref(window.db, 'products'), data);
                                         else window.fb.update(window.fb.ref(window.db, `products/${editTarget.id}`), data);
                                         setEditTarget(null);
+                                        triggerNotif("Studio Updated");
                                     }}
                                     className={`relative w-full max-w-lg p-10 rounded-[40px] space-y-4 border ${theme === 'dark' ? 'bg-[#1c1c21] border-white/10' : 'bg-white border-black/10'}`}
                                 >
-                                    <h3 className="font-bold uppercase tracking-widest text-xs mb-4">Edit Item</h3>
-                                    <input name="n" defaultValue={editTarget.name} placeholder="Name" className="w-full p-4 rounded-2xl" required />
+                                    <h3 className="font-black uppercase tracking-widest text-xs mb-4 italic">Edit Product</h3>
+                                    <input name="n" defaultValue={editTarget.name} placeholder="Product Name" className="w-full p-4 rounded-2xl" required />
                                     <input name="p" type="number" defaultValue={editTarget.price} placeholder="Price" className="w-full p-4 rounded-2xl" required />
-                                    <textarea name="i" defaultValue={editTarget.images} placeholder="Images (comma separated)" className="w-full p-4 rounded-2xl" required />
-                                    <textarea name="d" defaultValue={editTarget.desc} placeholder="Desc" className="w-full p-4 rounded-2xl h-24" />
+                                    <textarea name="i" defaultValue={editTarget.images || editTarget.image} placeholder="Image URLs (commas)" className="w-full p-4 rounded-2xl" required />
+                                    <textarea name="d" defaultValue={editTarget.desc} placeholder="Description" className="w-full p-4 rounded-2xl h-24" />
                                     <select name="s" defaultValue={editTarget.status} className="w-full p-4 rounded-2xl font-bold">
                                         <option value="available">Available</option>
                                         <option value="oos">Sold Out</option>
                                         <option value="soon">Coming Soon</option>
                                     </select>
-                                    <button className="w-full bg-rose-500 text-white py-5 rounded-2xl font-black">Sync with Web</button>
+                                    <button className="w-full bg-rose-500 text-white py-5 rounded-2xl font-black">Save Changes</button>
                                 </motion.form>
                             </div>
                         )}
                     </AnimatePresence>
 
-                    <footer className="mt-20 py-16 text-center opacity-20">
-                        <p onClick={() => setPage('admin')} className="text-[10px] font-black tracking-[1em] uppercase cursor-pointer italic">Console</p>
+                    <footer className="mt-20 py-16 text-center opacity-10">
+                        <p onClick={() => setPage('admin')} className="text-[10px] font-black tracking-[1em] uppercase cursor-pointer italic hover:text-rose-500 transition-colors">Console</p>
                     </footer>
                 </div>
             );
